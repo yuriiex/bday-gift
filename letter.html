@@ -235,6 +235,44 @@
       animation: fall linear forwards;
       z-index: -1; /* Behind content */
     }
+
+    /* Password Screen Styles */
+    .password-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #FFB6C1;
+      border: 2px solid #FF8FAB;
+    }
+
+    .password-dot.filled {
+      background: #FF6B9E;
+      transform: scale(1.1);
+      transition: all 0.3s;
+    }
+
+    .keypad-btn {
+      background: #FFEEF2;
+      border: 2px solid #FFB6C1;
+      border-radius: 50%;
+      width: 55px;
+      height: 55px;
+      font-size: 1.4rem;
+      color: #FF6B9E;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Short Stack', cursive;
+      box-shadow: 0 3px 0 #FF8FAB;
+    }
+
+    .keypad-btn:active {
+      transform: translateY(3px);
+      box-shadow: none;
+    }
+
+    .keypad-btn:hover {
+      background: #FFD1DC;
+    }
   </style>
 </head>
 <body>
@@ -255,9 +293,41 @@
     <h1 class="title">For My Pookie</h1>
     <p id="message" class="text">Would you like to open my letter :3 ?</p>
     <div class="buttons">
-      <button id="yes" class="button" onclick="showLetter()">Yes >< ! <span class="heart">❤</span></button>
+      <button id="yes" class="button" onclick="showPasswordScreen()">Yes >< ! <span class="heart">❤</span></button>
       <button id="no" class="button button-no" onclick="handleNo()">No </3<span class="heart">💔</span></button>
     </div>
+  </div>
+
+  <!-- Password Screen -->
+  <div id="password-screen" class="card hidden">
+    <h1 class="title" style="font-family: 'Dancing Script', cursive; margin-bottom: 10px;">Enter Password to Open Your Letter</h1>
+    <p class="text" style="font-size: 1rem; color: #FF8FAB;">Spoiler: It's your birthday date<br>(Day/Month format)</p>
+    
+    <!-- Password dots -->
+    <div id="password-dots" style="display: flex; justify-content: center; gap: 15px; margin: 25px 0;">
+      <div class="password-dot"></div>
+      <div class="password-dot"></div>
+      <div class="password-dot"></div>
+      <div class="password-dot"></div>
+    </div>
+    
+    <!-- Keypad -->
+    <div class="keypad" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 250px; margin: 0 auto;">
+      <button class="keypad-btn" data-number="1">1</button>
+      <button class="keypad-btn" data-number="2">2</button>
+      <button class="keypad-btn" data-number="3">3</button>
+      <button class="keypad-btn" data-number="4">4</button>
+      <button class="keypad-btn" data-number="5">5</button>
+      <button class="keypad-btn" data-number="6">6</button>
+      <button class="keypad-btn" data-number="7">7</button>
+      <button class="keypad-btn" data-number="8">8</button>
+      <button class="keypad-btn" data-number="9">9</button>
+      <button class="keypad-btn" style="visibility: hidden;"></button>
+      <button class="keypad-btn" data-number="0">0</button>
+      <button class="keypad-btn" id="backspace-btn" style="background: #FFD166;">⌫</button>
+    </div>
+    
+    <p id="password-error" class="text" style="color: #FF6B6B; margin-top: 20px; display: none;">Wrong password! Try again ❤</p>
   </div>
 
   <!-- Romantic Letter -->
@@ -302,6 +372,8 @@
       <div class="heart-divider">♥ ♥ ♥</div>
       
       <p>Anyway, happy birthday my best friend. Have a good day! And a good year.</p>
+
+      <p>Lil spoiler, i'm so sorrrrrrrrrrryyyyyyyyyyy i didn't find another way to share the file with u like, all the methods i found where permanent or blocked some of the code, so i had to post it as website, and i made the password thing so the letter would stay private, (but who's gonna check this thing anyway) anyway anyway, caught myself yapping again TT</p>
     `;
 
     // Initialize
@@ -311,6 +383,10 @@
     // Track current view
     let currentView = 'card1';
     let noCount = 0;
+    
+    // Password System (2707)
+    let passwordInput = '';
+    const CORRECT_PASSWORD = '2707';
     
     // Audio setup
     const bgMusic = document.getElementById('bgMusic');
@@ -339,6 +415,7 @@
       // Hide all views first
       document.getElementById('card1').classList.add('hidden');
       document.getElementById('card2').classList.add('hidden');
+      document.getElementById('password-screen').classList.add('hidden');
       document.getElementById('letter').classList.add('hidden');
       
       // Show the requested view
@@ -387,6 +464,14 @@
       setupAudio();
     }
 
+    function showPasswordScreen() {
+      // Push new state to history
+      window.history.pushState({ view: 'password-screen' }, '', '#password-screen');
+      showView('password-screen');
+      passwordInput = '';
+      updatePasswordDots();
+    }
+
     function showLetter() {
       // Push new state to history
       window.history.pushState({ view: 'letter' }, '', '#letter');
@@ -421,6 +506,44 @@
         message.textContent = "I knew you'd say yes! 😊";
       }
     }
+
+    function checkPassword() {
+      if (passwordInput === CORRECT_PASSWORD) {
+        document.getElementById('password-screen').classList.add('hidden');
+        showLetter(); // Show the letter after correct password
+      } else {
+        document.getElementById('password-error').style.display = 'block';
+        passwordInput = '';
+        updatePasswordDots();
+        setTimeout(() => {
+          document.getElementById('password-error').style.display = 'none';
+        }, 1500);
+      }
+    }
+
+    function updatePasswordDots() {
+      const dots = document.querySelectorAll('.password-dot');
+      dots.forEach((dot, index) => {
+        dot.classList.toggle('filled', index < passwordInput.length);
+      });
+    }
+
+    // Keypad Event Listeners
+    document.querySelectorAll('.keypad-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const number = this.getAttribute('data-number');
+        if (number && passwordInput.length < 4) {
+          passwordInput += number;
+          updatePasswordDots();
+          if (passwordInput.length === 4) checkPassword();
+        }
+      });
+    });
+
+    document.getElementById('backspace-btn').addEventListener('click', function() {
+      passwordInput = passwordInput.slice(0, -1);
+      updatePasswordDots();
+    });
 
     // Try to load and play music when user interacts
     function setupAudio() {
